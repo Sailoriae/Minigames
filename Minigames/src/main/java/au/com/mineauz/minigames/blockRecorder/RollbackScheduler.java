@@ -9,8 +9,10 @@ import org.bukkit.block.*;
 import org.bukkit.block.data.Rotatable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.InventoryHolder;
+import org.bukkit.plugin.IllegalPluginAccessException;
 import org.bukkit.scheduler.BukkitTask;
 
+import java.lang.Runnable;
 import java.util.Iterator;
 import java.util.List;
 
@@ -21,6 +23,7 @@ public class RollbackScheduler implements Runnable {
     private final BukkitTask task;
     private final Minigame minigame;
     private final MinigamePlayer modifier;
+    private boolean failed;
 
     public RollbackScheduler(List<MgBlockData> blocks, List<MgBlockData> physblocks, Minigame minigame, MinigamePlayer modifier) {
         iterator = blocks.iterator();
@@ -28,7 +31,20 @@ public class RollbackScheduler implements Runnable {
         this.minigame = minigame;
         this.modifier = modifier;
         int delay = minigame.getRegenDelay() * 20 + 1;
-        task = Bukkit.getScheduler().runTaskTimer(Minigames.getPlugin(), this, delay, 1);
+
+        BukkitTask tempTask;
+        failed = false;
+        try {
+            tempTask = Bukkit.getScheduler().runTaskTimer(Minigames.getPlugin(), this, delay, 1);
+        } catch (IllegalPluginAccessException e) {
+            tempTask = null;
+            failed = true;
+        }
+        task = tempTask;
+    }
+
+    public boolean needsToBeRunManually() {
+        return failed;
     }
 
     @Override
@@ -105,7 +121,8 @@ public class RollbackScheduler implements Runnable {
             minigame.setState(MinigameState.IDLE);
         }
 
-        task.cancel();
+        if (task != null)
+            task.cancel();
     }
 
 }

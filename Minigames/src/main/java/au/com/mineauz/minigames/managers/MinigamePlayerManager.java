@@ -27,9 +27,11 @@ import org.bukkit.entity.Vehicle;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.FireworkMeta;
+import org.bukkit.plugin.IllegalPluginAccessException;
 import org.bukkit.potion.PotionEffect;
 import org.jetbrains.annotations.NotNull;
 
+import java.lang.Runnable;
 import java.math.BigDecimal;
 import java.util.*;
 
@@ -487,7 +489,14 @@ public class MinigamePlayerManager {
                 player.getPlayer().setFallDistance(0);
                 player.getPlayer().setNoDamageTicks(60);
                 final MinigamePlayer fplayer = player;
-                Bukkit.getScheduler().runTaskLater(plugin, () -> fplayer.getPlayer().setFireTicks(0), 0L);
+
+                Runnable task1 = () -> fplayer.getPlayer().setFireTicks(0);
+                try {
+                    Bukkit.getScheduler().runTaskLater(plugin, task1, 0L);
+                } catch (IllegalPluginAccessException e) {
+                    task1.run();
+                }
+
                 player.resetAllStats();
                 player.setStartPos(null);
                 if (!player.isDead()) {
@@ -587,7 +596,13 @@ public class MinigamePlayerManager {
                 for (PotionEffect potion : player.getPlayer().getActivePotionEffects()) {
                     player.getPlayer().removePotionEffect(potion.getType());
                 }
-                Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, () -> fplayer.setFireTicks(0));
+
+                Runnable task2 = () -> fplayer.setFireTicks(0);
+                try {
+                    Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, task2);
+                } catch (IllegalPluginAccessException e) {
+                    task2.run();
+                }
 
                 player.getPlayer().closeInventory();
                 if (!player.isDead()) {

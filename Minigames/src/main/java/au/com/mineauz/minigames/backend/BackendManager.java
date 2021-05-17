@@ -10,6 +10,7 @@ import au.com.mineauz.minigames.stats.*;
 import com.google.common.util.concurrent.*;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.plugin.IllegalPluginAccessException;
 
 import java.util.Collection;
 import java.util.List;
@@ -32,7 +33,13 @@ public class BackendManager {
         this.logger = logger;
         this.debug = false;
 
-        bukkitThreadExecutor = command -> Bukkit.getScheduler().runTask(Minigames.getPlugin(), command);
+        bukkitThreadExecutor = command -> {
+            try {
+                Bukkit.getScheduler().runTask(Minigames.getPlugin(), command);
+            } catch (IllegalPluginAccessException e) {
+                command.run();
+            }
+        };
 
         executorService = MoreExecutors.listeningDecorator(Executors.newSingleThreadExecutor());
     }

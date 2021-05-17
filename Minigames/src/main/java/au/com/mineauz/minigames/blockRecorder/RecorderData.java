@@ -40,8 +40,10 @@ import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.material.Attachable;
 import org.bukkit.metadata.FixedMetadataValue;
+import org.bukkit.plugin.IllegalPluginAccessException;
 
 import java.io.*;
+import java.lang.Runnable;
 import java.lang.reflect.Type;
 import java.util.*;
 
@@ -359,14 +361,21 @@ public class RecorderData implements Listener {
             }
         }
 
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+        Runnable task1 = () -> {
             customblockComparator(baseBlocks);
             customblockComparator(attachableBlocks);
             customblockComparator(gravityBlocks);
             baseBlocks.addAll(gravityBlocks);
 
-            new RollbackScheduler(baseBlocks, attachableBlocks, minigame, modifier);
-        });
+            RollbackScheduler task2 = new RollbackScheduler(baseBlocks, attachableBlocks, minigame, modifier);
+            if (task2.needsToBeRunManually())
+                task2.run();
+        };
+        try {
+            Bukkit.getScheduler().runTaskAsynchronously(plugin, task1);
+        } catch (IllegalPluginAccessException e) {
+            task1.run();
+        }
     }
 
     private void customblockComparator(List<MgBlockData> baseBlocks) {
